@@ -91,10 +91,8 @@ if __name__ == "__main__":
     if conn is not None:
         execute_sql(conn, create_szczyty_sql)
         execute_sql(conn, create_wyprawy_sql)
-        conn.close()
 
     szczyt = ("Gerlach", 2655, 2355)
-    conn = create_connection("database.db")
     szczyt_id = add_szczyt(conn, szczyt)
 
     wyprawa = (
@@ -108,3 +106,4 @@ if __name__ == "__main__":
 
     print(szczyt_id, wyprawa_id)
     conn.commit()
+    conn.close()
