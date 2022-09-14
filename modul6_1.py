@@ -61,28 +61,17 @@ def add_wyprawa(conn, wyprawa):
     return cur.lastrowid
 
 
-def select_wyprawy_by_sukces(conn, sukces):
-    """
-    Query tasks by priority
-    :param conn: the Connection object
-    :param sukces:
-    :return:
-    """
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM wyprawy WHERE sukces=?", (sukces,))
-
-    rows = cur.fetchall()
-    return rows
-
-
 def select_all(conn, table):
     """
     Query all rows in the table
     :param conn: the Connection object
     :return:
     """
+    # sql = f"SELECT * FROM {table}"
     cur = conn.cursor()
+    # execute_sql(conn, sql)
     cur.execute(f"SELECT * FROM {table}")
+
     rows = cur.fetchall()
 
     return rows
@@ -213,16 +202,15 @@ if __name__ == "__main__":
     wyprawa_id = add_wyprawa(conn, wyprawa)
 
     print(szczyt_id, wyprawa_id)
-    conn.commit()
 
     # wszystkie szczyty
-    select_all(conn, "szczyty")
+    print(select_all(conn, "szczyty"))
 
     # wszystkie wyprawy
-    select_all(conn, "wyprawy")
+    print(select_all(conn, "wyprawy"))
 
     # wszystkie wyprawy zakończone sukcesem
-    select_where(conn, "wyprawy", sukces=True)
+    print(select_where(conn, "wyprawy", sukces=True))
 
     update(conn, "wyprawy", 2, sukces="false")
 
