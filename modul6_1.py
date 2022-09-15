@@ -18,7 +18,7 @@ def create_connection(db_file):
     return conn
 
 
-def execute_sql(conn, sql):
+def execute_sql(conn, sql, args=None):
     """Execute sql
     :param conn: Connection object
     :param sql: a SQL script
@@ -26,7 +26,11 @@ def execute_sql(conn, sql):
     """
     try:
         c = conn.cursor()
-        c.execute(sql)
+        if args:
+            c.execute(sql, args)
+        else:
+            c.execute(sql)
+        return c
     except Error as e:
         print(e)
 
@@ -40,8 +44,7 @@ def add_szczyt(conn, szczyt):
     """
     sql = """INSERT INTO szczyty(nazwa, wysokosc_bezwzgledna, wybitnosc)
              VALUES(?,?,?)"""
-    cur = conn.cursor()
-    cur.execute(sql, szczyt)
+    cur = execute_sql(conn, sql, szczyt)
     conn.commit()
     return cur.lastrowid
 
@@ -55,8 +58,7 @@ def add_wyprawa(conn, wyprawa):
     """
     sql = """INSERT INTO wyprawy(szczyty_id, data_wyprawy, sukces, droga)
              VALUES(?,?,?,?)"""
-    cur = conn.cursor()
-    cur.execute(sql, wyprawa)
+    cur = execute_sql(conn, sql, wyprawa)
     conn.commit()
     return cur.lastrowid
 
@@ -67,13 +69,9 @@ def select_all(conn, table):
     :param conn: the Connection object
     :return:
     """
-    # sql = f"SELECT * FROM {table}"
-    cur = conn.cursor()
-    # execute_sql(conn, sql)
-    cur.execute(f"SELECT * FROM {table}")
-
+    sql = f"SELECT * FROM {table}"
+    cur = execute_sql(conn, sql)
     rows = cur.fetchall()
-
     return rows
 
 
@@ -85,14 +83,13 @@ def select_where(conn, table, **query):
     :param query: dict of attributes and values
     :return:
     """
-    cur = conn.cursor()
     qs = []
     values = ()
     for k, v in query.items():
         qs.append(f"{k}=?")
         values += (v,)
     q = " AND ".join(qs)
-    cur.execute(f"SELECT * FROM {table} WHERE {q}", values)
+    cur = execute_sql(conn, f"SELECT * FROM {table} WHERE {q}", values)
     rows = cur.fetchall()
     return rows
 
@@ -114,8 +111,7 @@ def update(conn, table, id, **kwargs):
              SET {parameters}
              WHERE id = ?"""
     try:
-        cur = conn.cursor()
-        cur.execute(sql, values)
+        execute_sql(conn, sql, values)
         conn.commit()
         print("OK")
     except sqlite3.OperationalError as e:
@@ -138,8 +134,7 @@ def delete_where(conn, table, **kwargs):
     q = " AND ".join(qs)
 
     sql = f"DELETE FROM {table} WHERE {q}"
-    cur = conn.cursor()
-    cur.execute(sql, values)
+    execute_sql(conn, sql, values)
     conn.commit()
     print("Deleted")
 
@@ -152,8 +147,7 @@ def delete_all(conn, table):
     :return:
     """
     sql = f"DELETE FROM {table}"
-    cur = conn.cursor()
-    cur.execute(sql)
+    execute_sql(conn, sql)
     conn.commit()
     print("Deleted")
 
@@ -200,23 +194,32 @@ if __name__ == "__main__":
     )
 
     wyprawa_id = add_wyprawa(conn, wyprawa)
-
-    print(szczyt_id, wyprawa_id)
+    add_wyprawa(conn, (szczyt_id, "2022-05-14", True, "lorem ipsum"))
+    add_wyprawa(conn, (szczyt_id, "2017-11-13", False, "Ala ma kota"))
 
     # wszystkie szczyty
     print(select_all(conn, "szczyty"))
+    print()
 
     # wszystkie wyprawy
     print(select_all(conn, "wyprawy"))
+    print()
 
     # wszystkie wyprawy zakończone sukcesem
     print(select_where(conn, "wyprawy", sukces=True))
+    print()
 
-    update(conn, "wyprawy", 2, sukces="false")
+    update(conn, "wyprawy", 2, sukces=False)
+    # wszystkie wyprawy zakończone sukcesem
+    print(select_where(conn, "wyprawy", sukces=True))
+    print()
 
     delete_where(conn, "wyprawy", id=3)
+    # wszystkie wyprawy
+    print(select_all(conn, "wyprawy"))
+    print()
 
-    # poniższej funkcji mogę użyć, ale nie chcę :-)
-    # delete_all("wyprawy")
+    delete_all(conn, "wyprawy")
+    delete_all(conn, "szczyty")
 
     conn.close()
