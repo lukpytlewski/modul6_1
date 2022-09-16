@@ -1,4 +1,3 @@
-import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, Float, Date, MetaData
 from sqlalchemy import update
@@ -36,11 +35,19 @@ measure = Table(
 meta.create_all(engine)
 print(engine.table_names())
 
+
+def conn_execute_with_print(conn, sql):
+    result = conn.execute(sql)
+    for row in result:
+        print(row)
+
+
 if __name__ == "__main__":
 
     ins = stations.insert()
 
     print(ins.compile().params)
+    print()
 
     conn = engine.connect()
     conn.execute(
@@ -99,19 +106,33 @@ if __name__ == "__main__":
     )
 
     s = stations.select().where(stations.c.elevation > 15)
-    result = conn.execute(s)
-    for row in result:
-        print(row)
+    conn_execute_with_print(conn, s)
+    print()
+
     result = conn.execute("SELECT * FROM measure LIMIT 2")
     rows = result.fetchall()
     print(rows)
+    print()
 
     r = (
-        update(stations)
+        stations.update()
         .where(stations.c.country == "US")
         .values(country="Stany Zjednoczone")
     )
     result = conn.execute(r)
 
-    p = delete(measure).where(measure.c.date == "01/01/2010")
+    s = stations.select().where(stations.c.country == "US")
+    conn_execute_with_print(conn, s)
+    print()
+
+    p = measure.delete().where(measure.c.date == "01/01/2010")
     result = conn.execute(p)
+
+    k = measure.select().where(measure.c.date == "01/01/2010")
+    conn_execute_with_print(conn, k)
+    print()
+
+    x = stations.delete()
+    conn.execute(x)
+    y = measure.delete()
+    conn.execute(y)
